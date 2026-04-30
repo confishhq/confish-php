@@ -116,7 +116,7 @@ final class ActionsTest extends TestCase
 
         $handlerRan = false;
         $client->actions->consume(
-            handler: function () use (&$handlerRan): null {
+            handler: function () use (&$handlerRan): ?array {
                 $handlerRan = true;
 
                 return null;
