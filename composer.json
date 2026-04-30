@@ -1,0 +1,42 @@
+{
+    "name": "confish/sdk",
+    "description": "Official PHP SDK for confish — typed configuration, actions, and webhooks.",
+    "type": "library",
+    "license": "MIT",
+    "homepage": "https://confi.sh",
+    "keywords": ["confish", "configuration", "config", "feature-flags", "sdk"],
+    "authors": [
+        { "name": "confish" }
+    ],
+    "require": {
+        "php": "^8.1",
+        "ext-json": "*",
+        "guzzlehttp/guzzle": "^7.5"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5",
+        "phpstan/phpstan": "^1.11"
+    },
+    "autoload": {
+        "psr-4": {
+            "Confish\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Confish\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse src --level=8"
+    },
+    "support": {
+        "issues": "https://github.com/confishhq/confish-php/issues",
+        "source": "https://github.com/confishhq/confish-php"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable"
+}
