@@ -42,6 +42,31 @@ final class ActionsTest extends TestCase
         self::assertInstanceOf(Action::class, $actions[0]);
     }
 
+    public function test_progress_posts_to_update_endpoint(): void
+    {
+        $client = $this->makeClient([
+            new Response(200, ['Content-Type' => 'application/json'], $this->pendingJson('a1')),
+        ]);
+
+        $client->actions->progress('a1', 'Crawling sitemap', ['step' => 2]);
+
+        self::assertSame('/c/env_test/actions/a1/update', $this->recorded[0]['request']->getUri()->getPath());
+        self::assertSame(['message' => 'Crawling sitemap', 'data' => ['step' => 2]], $this->bodyOf(0));
+    }
+
+    public function test_action_updater_progress_delegates(): void
+    {
+        $client = $this->makeClient([
+            new Response(200, ['Content-Type' => 'application/json'], $this->pendingJson('a1')),
+        ]);
+
+        $updater = new ActionUpdater($client->actions, 'a1');
+        $updater->progress('halfway');
+
+        self::assertSame('/c/env_test/actions/a1/update', $this->recorded[0]['request']->getUri()->getPath());
+        self::assertSame(['message' => 'halfway'], $this->bodyOf(0));
+    }
+
     public function test_complete_with_result(): void
     {
         $client = $this->makeClient([

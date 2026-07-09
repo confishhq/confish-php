@@ -36,8 +36,12 @@ final class Actions
         );
     }
 
-    /** @param  array<string, mixed>|null  $data */
-    public function update(string $actionId, string $message, ?array $data = null): Action
+    /**
+     * Appends a progress note to the action's timeline.
+     *
+     * @param  array<string, mixed>|null  $data
+     */
+    public function progress(string $actionId, string $message, ?array $data = null): Action
     {
         $body = ['message' => $message];
         if ($data !== null) {

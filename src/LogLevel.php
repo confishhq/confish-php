@@ -13,4 +13,5 @@ enum LogLevel: string
     case Error = 'error';
     case Critical = 'critical';
     case Alert = 'alert';
+    case Emergency = 'emergency';
 }

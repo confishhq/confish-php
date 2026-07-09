@@ -9,6 +9,7 @@ use Confish\Exception\ConflictException;
 use Confish\Exception\ConfishException;
 use Confish\Exception\ForbiddenException;
 use Confish\Exception\NetworkException;
+use Confish\Exception\NotFoundException;
 use Confish\Exception\RateLimitException;
 use Confish\Exception\ServerException;
 use Confish\Exception\ValidationException;
@@ -123,6 +124,7 @@ final class HttpClient
         return match (true) {
             $status === 401                   => new AuthException($message, $status, $body),
             $status === 403                   => new ForbiddenException($message, $status, $body),
+            $status === 404                   => new NotFoundException($message, $status, $body),
             $status === 409                   => new ConflictException($message, $status, $body),
             $status === 422                   => new ValidationException($message, $status, $body, $this->extractValidationErrors($body)),
             $status === 429                   => new RateLimitException(

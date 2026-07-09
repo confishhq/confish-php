@@ -1,6 +1,6 @@
 {
     "name": "confish/sdk",
-    "description": "Official PHP SDK for confish — typed configuration, actions, and webhooks.",
+    "description": "Official PHP SDK for confish — typed configuration, feeds, actions, and webhooks.",
     "type": "library",
     "license": "MIT",
     "homepage": "https://confi.sh",

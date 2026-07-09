@@ -10,8 +10,9 @@ final class Confish
 {
     public const DEFAULT_BASE_URL = 'https://confi.sh';
 
+    public readonly Config $config;
     public readonly Actions $actions;
-    public readonly Logger $logger;
+    public readonly Logs $logs;
     private readonly HttpClient $http;
     private readonly string $envId;
 
@@ -40,47 +41,17 @@ final class Confish
             maxRetries: $maxRetries,
             maxRetryDelay: $maxRetryDelay,
         );
+        $this->config = new Config($this->http, $envId);
         $this->actions = new Actions($this->http, $envId);
-        $this->logger = new Logger($this);
+        $this->logs = new Logs($this->http, $envId);
     }
 
     /**
-     * @return array<string, mixed>
+     * Returns a handle bound to the feed with the given slug.
+     * No HTTP request is made until a method is called on the handle.
      */
-    public function fetch(): array
+    public function feed(string $slug): Feed
     {
-        return $this->http->request('GET', "/c/{$this->envId}") ?? [];
-    }
-
-    /**
-     * @param  array<string, mixed>  $values
-     * @return array<string, mixed>
-     */
-    public function update(array $values): array
-    {
-        return $this->http->request('PATCH', "/c/{$this->envId}", ['values' => $values]) ?? [];
-    }
-
-    /**
-     * @param  array<string, mixed>  $values
-     * @return array<string, mixed>
-     */
-    public function replace(array $values): array
-    {
-        return $this->http->request('PUT', "/c/{$this->envId}", ['values' => $values]) ?? [];
-    }
-
-    /**
-     * @param  array<string, mixed>|null  $context
-     */
-    public function log(LogLevel $level, string $message, ?array $context = null): string
-    {
-        $body = ['level' => $level->value, 'message' => $message];
-        if ($context !== null) {
-            $body['context'] = $context;
-        }
-        $response = $this->http->request('POST', "/c/{$this->envId}/log", $body) ?? [];
-
-        return (string) ($response['id'] ?? '');
+        return new Feed($this->http, $this->envId, $slug);
     }
 }
