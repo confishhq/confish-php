@@ -1,6 +1,6 @@
 # confish/sdk
 
-Official PHP SDK for [confish](https://confi.sh) — typed configuration, feeds, actions, and webhook verification.
+Official PHP SDK for [confish](https://confi.sh) — typed configuration, actions, logs, feeds, and webhook verification.
 
 - One dependency (Guzzle)
 - Typed exceptions and automatic retry on `429`/`5xx`
