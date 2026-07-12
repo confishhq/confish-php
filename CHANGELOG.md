@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.3.0 — 2026-07-12
+
+### Added
+
+- **Monolog handler.** `Confish\MonologHandler` (Monolog v3) buffers records
+  in memory — with the timestamp captured at log time — and ships them
+  through the batch log endpoint: it flushes at 50 buffered records
+  (`flushAt:`), on `flush()`, and on `close()`/destruct, chunked to at most
+  100 entries per request. Delivery failures never throw into the logging
+  path: dropped entries are counted (`droppedCount()`) and reported to an
+  optional `onError` callback. Monolog stays optional — it ships in
+  composer `suggest`, not `require`, and the class is only autoloaded when
+  instantiated.
+- **PSR-3 logger.** `Confish\PsrLogger` implements `Psr\Log\LoggerInterface`
+  for code without Monolog, sending each record immediately through
+  `$client->logs` — with the same never-throw guarantee,
+  `droppedCount()`, and `onError` callback. Adds `psr/log` (^2 || ^3) as a
+  dependency.
+- `$client->logs->writeBatch($entries)` — writes up to
+  `Logs::MAX_BATCH_SIZE` (100) entries in one request (each with `level`,
+  `message`, optional `context`, and optional ISO 8601 `timestamp`) and
+  returns the created log entry IDs.
+
 ## v0.2.0 — 2026-07-09
 
 ### Added

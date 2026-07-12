@@ -11,11 +11,16 @@
     "require": {
         "php": "^8.1",
         "ext-json": "*",
-        "guzzlehttp/guzzle": "^7.5"
+        "guzzlehttp/guzzle": "^7.5",
+        "psr/log": "^2.0 || ^3.0"
     },
     "require-dev": {
+        "monolog/monolog": "^3.0",
         "phpunit/phpunit": "^10.5",
         "phpstan/phpstan": "^1.11"
+    },
+    "suggest": {
+        "monolog/monolog": "Ship logging you already have to confish in batches via Confish\\MonologHandler (^3.0)"
     },
     "autoload": {
         "psr-4": {

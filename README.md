@@ -2,8 +2,9 @@
 
 Official PHP SDK for [confish](https://confi.sh) — typed configuration, actions, logs, feeds, and webhook verification.
 
-- One dependency (Guzzle)
+- Lean dependencies: Guzzle plus the PSR-3 interfaces
 - Typed exceptions and automatic retry on `429`/`5xx`
+- Monolog handler and PSR-3 logger — point logging you already have at confish
 - Long-running action consumer with graceful-shutdown hook
 - HMAC-SHA256 webhook verification (no extra deps)
 
@@ -107,6 +108,88 @@ $logId = $client->logs->write(LogLevel::Critical, 'system down', ['code' => 503]
 ```
 
 Levels via the `LogLevel` enum: `Debug`, `Info`, `Notice`, `Warning`, `Error`, `Critical`, `Alert`, `Emergency`. Levels follow RFC 5424 (syslog), so they map 1:1 onto PSR-3/Monolog levels.
+
+You can also write up to 100 entries in one request. `level` takes the enum or its string value; the optional ISO 8601 `timestamp` records when the entry was captured, for entries you buffered before sending:
+
+```php
+$ids = $client->logs->writeBatch([
+    ['level' => LogLevel::Info, 'message' => 'Crawl started', 'context' => ['urls' => 1423]],
+    ['level' => 'error', 'message' => 'Import failed', 'timestamp' => '2026-07-12T09:58:12+00:00'],
+]);
+```
+
+### Monolog / PSR-3
+
+If you already log through Monolog, push `Confish\MonologHandler` onto your stack and everything you log flows to confish as well — no call-site changes:
+
+```php
+use Confish\MonologHandler;
+use Monolog\Level;
+use Monolog\Logger;
+
+$logger = new Logger('crawler');
+$logger->pushHandler(new MonologHandler($client, level: Level::Info));
+
+$logger->info('Sitemap crawl started', ['urls' => 1423]);
+$logger->error('Import failed', ['exception' => $e]);
+```
+
+The handler needs `monolog/monolog` ^3.0 (`composer require monolog/monolog`) — the SDK only *suggests* it, so you don't pull in Monolog unless you use the handler.
+
+Records are buffered in memory with the timestamp captured at log time, then shipped through the batch endpoint: the handler flushes automatically at 50 buffered records (tune with `flushAt:`), on `close()`, and when it is destroyed at the end of the request — chunked to at most 100 entries per request. In long-running workers (queue consumers, daemons), call `$handler->flush()` on your own cadence or wrap the handler in Monolog's `BufferHandler`.
+
+Delivery failures are swallowed, never thrown back into your logging path — a confish outage can't take down the work you're logging. Dropped entries are counted (`$handler->droppedCount()`) and reported to an optional callback, which is never routed back through the handler, so delivery errors can't feed back on themselves:
+
+```php
+$handler = new MonologHandler($client, onError: function (Throwable $e, int $dropped): void {
+    error_log("confish: dropped $dropped log entries: {$e->getMessage()}");
+});
+```
+
+Not on Monolog? `Confish\PsrLogger` implements PSR-3's `LoggerInterface` and sends each record immediately, one request per call — fine for scripts and cron jobs; prefer the buffered Monolog handler for anything chatty. It gives the same never-throw guarantee, with `droppedCount()` and the same `onError` callback:
+
+```php
+use Confish\PsrLogger;
+
+$logger = new PsrLogger($client);
+$logger->warning('Certificate expires soon', ['domain' => 'example.com', 'days_left' => 7]);
+```
+
+Both adapters pass context through structured — placeholders are not interpolated, and the dashboard renders the context object. Throwables under any context key are converted to `class`/`message`/`file`/`line` so they survive JSON encoding.
+
+#### Laravel
+
+Bind the client once, then point a `monolog` channel at the handler — no extra package or service provider needed:
+
+```php
+// app/Providers/AppServiceProvider.php
+use Confish\Confish;
+
+public function register(): void
+{
+    $this->app->singleton(Confish::class, fn () => new Confish(
+        envId: config('services.confish.env_id'),
+        apiKey: config('services.confish.api_key'),
+    ));
+}
+```
+
+```php
+// config/logging.php
+'channels' => [
+    // ...
+    'confish' => [
+        'driver'  => 'monolog',
+        'handler' => Confish\MonologHandler::class,
+        'level'   => env('LOG_LEVEL', 'info'),
+        'handler_with' => [
+            'flushAt' => 50,
+        ],
+    ],
+],
+```
+
+Laravel resolves the handler through the container — injecting the bound `Confish` client and passing the channel's `level` — so scalar options are all `handler_with` needs. Log to it directly (`Log::channel('confish')->info(...)`) or add `'confish'` to your `stack` channel to mirror everything you already log. Buffered records flush at the threshold and when the process shuts down; queue workers live across many jobs, so flush from a job hook or lower `flushAt` if you need entries sooner.
 
 ## Actions
 

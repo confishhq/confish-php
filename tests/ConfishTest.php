@@ -169,6 +169,46 @@ final class ConfishTest extends TestCase
         );
     }
 
+    public function test_logs_write_batch_sends_entries_and_returns_ids(): void
+    {
+        $client = $this->makeClient([
+            new Response(201, ['Content-Type' => 'application/json'], '{"ids":["log_1","log_2"]}'),
+        ]);
+
+        $ids = $client->logs->writeBatch([
+            ['level' => LogLevel::Info, 'message' => 'Crawl started', 'context' => ['urls' => 12], 'timestamp' => '2026-07-12T10:00:00+00:00'],
+            ['level' => 'error', 'message' => 'Crawl failed'],
+        ]);
+
+        self::assertSame(['log_1', 'log_2'], $ids);
+        self::assertSame('POST', $this->recorded[0]['request']->getMethod());
+        self::assertSame('/c/env_test/logs', $this->recorded[0]['request']->getUri()->getPath());
+        self::assertSame([
+            'entries' => [
+                ['level' => 'info', 'message' => 'Crawl started', 'context' => ['urls' => 12], 'timestamp' => '2026-07-12T10:00:00+00:00'],
+                ['level' => 'error', 'message' => 'Crawl failed'],
+            ],
+        ], $this->bodyOf(0));
+    }
+
+    public function test_logs_write_batch_rejects_more_than_100_entries(): void
+    {
+        $client = $this->makeClient([]);
+        $entries = array_map(static fn (int $i): array => ['level' => 'info', 'message' => "m$i"], range(1, 101));
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('100');
+        $client->logs->writeBatch($entries);
+    }
+
+    public function test_logs_write_batch_with_no_entries_makes_no_request(): void
+    {
+        $client = $this->makeClient([]);
+
+        self::assertSame([], $client->logs->writeBatch([]));
+        self::assertCount(0, $this->recorded);
+    }
+
     public function test_constructor_validates_required_fields(): void
     {
         $this->expectException(\InvalidArgumentException::class);
