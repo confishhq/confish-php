@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Dependencies updated: `guzzlehttp/guzzle` constraint widened to `^7.5 || ^8.0`
+  (locked at 8.2.0; Guzzle 7 still supported for existing consumers),
+  `phpstan/phpstan` (dev) raised to `^2.2` (from `^1.11`), and other
+  `require`/`require-dev` packages bumped to their latest release within
+  existing constraints (`monolog/monolog` 3.12.0, `phpunit/phpunit` 10.5.65).
+  `phpunit/phpunit` stays on the `^10.5` major — PHPUnit 11+ raises its own
+  PHP floor above this SDK's `php: ^8.1` support, so bumping it would break
+  CI on PHP 8.1/8.2. Public API and the `php: ^8.1` floor are unchanged.
+- CI: added PHP 8.5 to the test matrix and bumped Action pins
+  (`actions/checkout` v4 → v7, `ramsey/composer-install` v3 → v4;
+  `shivammathur/setup-php` stays at v2, its latest major).
+
 ## v0.3.0 — 2026-07-12
 
 ### Added
